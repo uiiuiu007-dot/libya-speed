@@ -124,5 +124,51 @@ $("start").onclick=async()=>{
  }
 };
 </script>
+
+<!-- SPEED LIBYA PRO -->
+<section id="speed-libya-pro" dir="rtl" style="
+  margin:30px 12px;
+  padding:25px 15px;
+  background:#102b27;
+  color:white;
+  border-radius:20px;
+  text-align:center;
+  font-family:Arial,sans-serif;
+">
+  <h2 style="font-size:27px">🚀 Speed Libya PRO</h2>
+  <p>طوّر تجربة اختبار سرعة الإنترنت</p>
+
+  <div style="background:#19443d;padding:18px;border-radius:14px;margin:15px 0">
+    <h3>اشتراك يومي</h3>
+    <h2>1 دينار</h2>
+    <button onclick="selectSpeedPlan('يومي',1)">اشترك الآن</button>
+  </div>
+
+  <div style="background:#19443d;padding:18px;border-radius:14px;margin:15px 0">
+    <h3>اشتراك أسبوعي</h3>
+    <h2>5 دنانير</h2>
+    <button onclick="selectSpeedPlan('أسبوعي',5)">اشترك الآن</button>
+  </div>
+
+  <div style="background:#19443d;padding:18px;border-radius:14px;margin:15px 0">
+    <h3>اشتراك شهري</h3>
+    <h2>10 دنانير</h2>
+    <button onclick="selectSpeedPlan('شهري',10)">اشترك الآن</button>
+  </div>
+
+  <p style="color:#b9ead9">مميزات PRO: Ping وLatency وقياس MS</p>
+  <p style="font-size:13px">النسخة المجانية متاحة للجميع ❤️</p>
+  <p id="speed-plan-message"></p>
+</section>
+
+<script>
+function selectSpeedPlan(plan, price) {
+  document.getElementById("speed-plan-message").textContent =
+    "اخترت الاشتراك " + plan + " بسعر " + price +
+    " دينار. الدفع غير مربوط حالياً.";
+}
+</script>
+<!-- END SPEED LIBYA PRO -->
+
 </body>
 </html>

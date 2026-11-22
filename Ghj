@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Speed Libya</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;padding:20px;
+ background:linear-gradient(145deg,#061525,#123d5b);
+ color:white;font-family:Arial;text-align:center;
+ display:flex;justify-content:center;align-items:center
+}
+.container{width:100%;max-width:520px}
+h1{font-size:34px;color:#35d9ff}
+.sub{color:#b6d5e8}
+.gauge{position:relative;width:min(100%,380px);margin:15px auto}
+svg{width:100%;overflow:visible}
+.tick{stroke:#8caec5;stroke-width:2}
+.number{fill:#d9efff;font-size:12px;text-anchor:middle}
+#needle{
+ stroke:#ffcf54;stroke-width:5;stroke-linecap:round;
+ transform-origin:180px 180px;
+ transform:rotate(0deg);
+ transition:transform .12s linear
+}
+.center{fill:#ffcf54}
+.reading{
+ position:absolute;top:56%;left:50%;
+ transform:translate(-50%,-50%);
+ font-size:43px;font-weight:bold
+}
+.unit{font-size:15px;color:#a8d8ee}
+button{
+ background:#27d5f5;color:#062033;border:0;
+ border-radius:35px;padding:16px 45px;
+ font-size:20px;font-weight:bold;cursor:pointer
+}
+button:disabled{opacity:.5}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:25px}
+.stat{background:#ffffff12;padding:15px 4px;border-radius:14px}
+.stat strong{display:block;color:#35d9ff;font-size:23px;margin-top:9px}
+#status{color:#b6d5e8;margin-top:22px}
+footer{color:#789bb3;font-size:13px;margin-top:25px}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🇱🇾 SPEED LIBYA</h1>
+<p class="sub">اختبر سرعة الإنترنت عندك</p>
+
+<div class="gauge">
+<svg viewBox="0 0 360 230">
+<path d="M52 180 A128 128 0 0 1 308 180"
+ fill="none" stroke="#244d68" stroke-width="13"
+ stroke-linecap="round"/>
+<g id="ticks"></g>
+<line id="needle" x1="180" y1="180" x2="180" y2="65"/>
+<circle class="center" cx="180" cy="180" r="10"/>
+</svg>
+<div class="reading">
+<div id="result">0.00</div>
+<div class="unit">Mbps</div>
+</div>
+</div>
+
+<button id="start" onclick="testSpeed()">ابدأ الاختبار</button>
+
+<div class="stats">
+<div class="stat">Ping<strong id="ping">--</strong><small>ms</small></div>
+<div class="stat">Download<strong id="down">--</strong><small>Mbps</small></div>
+<div class="stat">Upload<strong id="up">--</strong><small>Mbps</small></div>
+</div>
+
+<p id="status">جاهز للاختبار 🚀</p>
+<footer>Speed Libya © 2026</footer>
+</div>
+
+<script>
+const values=[0,5,10,20,30,40,50,60,70,80,90,150,200,250,300];
+const ticks=document.getElementById('ticks');
+
+values.forEach((value,i)=>{
+ const angle=(-135+i*270/(values.length-1))*Math.PI/180;
+ const x1=180+Math.cos(angle)*143;
+ const y1=180+Math.sin(angle)*143;
+ const x2=180+Math.cos(angle)*157;
+ const y2=180+Math.sin(angle)*157;
+ const x=180+Math.cos(angle)*174;
+ const y=180+Math.sin(angle)*174;
+ ticks.innerHTML+=`
+ <line class="tick" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>
+ <text class="number" x="${x}" y="${y+4}">${value}</text>`;
+});
+
+function showSpeed(value){
+ const angle=-135+Math.min(Math.max(value,0),300)/300*270;
+ document.getElementById('needle').style.transform=`rotate(${angle+135}deg)`;
+ document.getElementById('result').textContent=value.toFixed(2);
+}
+
+async function measureDownload(){
+ const response=await fetch(
+ 'https://speed.cloudflare.com/__down?bytes=25000000&x='+Math.random(),
+ {cache:'no-store'}
+ );
+ if(!response.ok)throw Error('Download failed');
+ const reader=response.body.getReader();
+ let bytes=0,start=performance.now(),last=start;
+ while(true){
+  const {done,value}=await reader.read();
+  if(done)break;
+  bytes+=value.length;
+  const now=performance.now();
+  if(now-last>=120){
+   showSpeed(bytes*8/((now-start)/1000)/1000000);
+   last=now;
+  }
+ }
+ return bytes*8/((performance.now()-start)/1000)/1000000;
+}
+
+async function testSpeed(){
+ const btn=document.getElementById('start');
+ const status=document.getElementById('status');
+ btn.disabled=true;
+ showSpeed(0);
+ ['ping','down','up'].forEach(id=>document.getElementById(id).textContent='--');
+
+ try{
+  let t=performance.now();
+  await fetch('https://www.cloudflare.com/cdn-cgi/trace?x='+Math.random(),{cache:'no-store'});
+  document.getElementById('ping').textContent=Math.round(performance.now()-t);
+
+  status.textContent='⬇️ Download';
+  let speed=await measureDownload();
+  document.getElementById('down').textContent=speed.toFixed(2);
+  showSpeed(speed);
+
+  status.textContent='⬆️ Upload';
+  let data=new Uint8Array(5000000);
+  t=performance.now();
+  let uploadResponse=await fetch('https://speed.cloudflare.com/__up',{
+   method:'POST',body:data
+  });
+  if(!uploadResponse.ok)throw Error('Upload failed');
+  let upload=data.length*8/((performance.now()-t)/1000)/1000000;
+  document.getElementById('up').textContent=upload.toFixed(2);
+  showSpeed(upload);
+
+  status.textContent='اكتمل الاختبار بنجاح ✅';
+ }catch(e){
+  status.textContent='تعذر الاختبار، حاول مرة ثانية';
+ }finally{
+  btn.disabled=false;
+ }
+}
+</script>
+</body>
+</html>
+
+

@@ -1,1 +1,128 @@
-# libya-speed
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speed Libya</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;background:linear-gradient(145deg,#06152d,#102e55);
+ color:white;font-family:Arial,sans-serif;text-align:center;
+ display:flex;justify-content:center;align-items:center;padding:20px
+}
+main{width:100%;max-width:440px}
+h1{font-size:34px;color:#48d9ff;margin-bottom:5px}
+p{color:#b8d9f5}
+.gauge{
+ width:min(85vw,330px);height:min(85vw,330px);margin:35px auto 20px;
+ border-radius:50%;position:relative;
+ background:conic-gradient(from 225deg,#35d9ff 0deg,#1686e8 270deg,#ffffff22 270deg 270deg,transparent 270deg);
+ display:grid;place-items:center;
+}
+.gauge:before{
+ content:"";position:absolute;width:82%;height:82%;border-radius:50%;
+ background:#0b2040;box-shadow:inset 0 0 25px #0008
+}
+.inner{z-index:1}
+#speed{font-size:58px;font-weight:bold}
+.unit{color:#55dfff;font-size:18px}
+.needle{
+ position:absolute;width:4px;height:40%;background:#fff;
+ bottom:50%;left:calc(50% - 2px);transform-origin:bottom;
+ transform:rotate(-135deg);border-radius:5px;z-index:2;
+}
+.dot{position:absolute;width:16px;height:16px;border-radius:50%;
+ background:#55dfff;z-index:3}
+button{
+ background:#28c9f5;color:#06152d;border:0;border-radius:15px;
+ padding:16px 35px;font-size:20px;font-weight:bold;cursor:pointer;
+ margin:20px
+}
+.stats{display:flex;gap:10px;justify-content:center}
+.stat{background:#17375e;border:1px solid #2b5d88;
+ padding:15px;border-radius:12px;flex:1}
+.stat strong{display:block;font-size:20px;color:#55dfff;margin-top:8px}
+#status{color:#b8d9f5;min-height:25px}
+</style>
+</head>
+<body>
+<main>
+<h1>Speed Libya</h1>
+<p>اختبر سرعة الإنترنت عندك</p>
+
+<div class="gauge">
+<div class="needle" id="needle"></div>
+<div class="dot"></div>
+<div class="inner">
+<div id="speed">0</div>
+<div class="unit">Mbps</div>
+</div>
+</div>
+
+<div class="stats">
+<div class="stat">Ping<strong id="ping">--</strong></div>
+<div class="stat">Download<strong id="down">--</strong></div>
+<div class="stat">Upload<strong id="up">--</strong></div>
+</div>
+
+<button id="start">ابدأ الاختبار</button>
+<div id="status">جاهز للاختبار</div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+let current=0;
+function showSpeed(n){
+ current=Math.max(0,Math.min(300,n));
+ $("speed").textContent=current.toFixed(1);
+ $("needle").style.transform=`rotate(${-135+current/300*270}deg)`;
+}
+async function pingTest(){
+ let t=performance.now();
+ await fetch("https://speed.cloudflare.com/__down?bytes=1",{cache:"no-store"});
+ return Math.round(performance.now()-t);
+}
+async function downloadTest(){
+ const bytes=25000000;
+ let start=performance.now(),received=0;
+ const response=await fetch("https://speed.cloudflare.com/__down?bytes="+bytes,{cache:"no-store"});
+ if(!response.ok)throw Error("Download failed");
+ const reader=response.body.getReader();
+ while(true){
+  const {done,value}=await reader.read();
+  if(done)break;
+  received+=value.length;
+  let seconds=(performance.now()-start)/1000;
+  if(seconds>0)showSpeed(received*8/seconds/1000000);
+ }
+ return received*8/((performance.now()-start)/1000)/1000000;
+}
+async function uploadTest(){
+ let data=new Blob([new Uint8Array(5000000)]);
+ let start=performance.now();
+ await fetch("https://speed.cloudflare.com/__up",{method:"POST",body:data});
+ return data.size*8/((performance.now()-start)/1000)/1000000;
+}
+$("start").onclick=async()=>{
+ $("start").disabled=true;
+ try{
+  $("status").textContent="جاري قياس Ping...";
+  $("ping").textContent=await pingTest()+" ms";
+  $("status").textContent="جاري قياس Download...";
+  let d=await downloadTest();
+  $("down").textContent=d.toFixed(1)+" Mbps";
+  $("status").textContent="جاري قياس Upload...";
+  let u=await uploadTest();
+  $("up").textContent=u.toFixed(1)+" Mbps";
+  showSpeed(d);
+  $("status").textContent="اكتمل الاختبار بنجاح!";
+ }catch(e){
+  $("status").textContent="تعذر الاختبار، حاول مرة ثانية";
+ }finally{
+  $("start").disabled=false;
+ }
+};
+</script>
+</body>
+</html>

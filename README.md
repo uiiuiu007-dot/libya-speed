@@ -173,4 +173,6 @@ $("plan-message").textContent=
 </script>
 
 </body>
+<img src="file_00000000a3e48210be0fc32e205d6813.png"
+style="width:100%;height:auto;display:block;">
 </html>
